@@ -10,15 +10,16 @@ import nltk
 from nltk.corpus import stopwords
 nltk.data.path.append(os.path.join(os.path.dirname(__file__), "data"))
 
-
+from keras.preprocessing.text import text_to_word_sequence
 from keras.preprocessing.text import Tokenizer
+from keras.preprocessing.text import hashing_trick
 
 
 if len(sys.argv) < 2:
 	print("usage: tokenize.py INFILE")
 	exit()
 
-def tokenize(text):
+def tokenize_cleaner(text):
 	sr = stopwords.words('english')
 	tokens = [t for t in text.lower().split()]
 	clean_tokens = tokens[:]
@@ -27,7 +28,8 @@ def tokenize(text):
 	        clean_tokens.remove(token)
 	return clean_tokens
 
-#keras.preprocessing.text.Tokenizer(num_words=None, filters='!"#$%&()*+,-./:;<=>?@[\\]^_`{|}~\t\n', lower=True, split=' ', char_level=False, oov_token=None, document_count=0)
+t = Tokenizer()
+# fit the tokenizer on the documents
 
 all_tokens = dict()
 with zipfile.ZipFile(sys.argv[1]) as z:
@@ -36,10 +38,16 @@ with zipfile.ZipFile(sys.argv[1]) as z:
 		reader = csv.reader(codecs.iterdecode(file_in, 'utf-8'))
 		next(reader)
 		for line in reader:
-			clean_tokens = tokenize(line[1])
-			freq = nltk.FreqDist(clean_tokens)
-			for key,val in freq.items():
-				all_tokens[key] = 1 #all_tokens.get(key,0) + 1
+			words = text_to_word_sequence(line[1])
+			t.fit_on_texts(words)
+			#clean_tokens = tokenize(line[1])
+			#freq = nltk.FreqDist(clean_tokens)
+			#for key,val in freq.items():
+			#	all_tokens[key] = 1 #all_tokens.get(key,0) + 1
 
-#print(all_tokens)
-
+	
+# summarize what was learned
+print(t.word_counts)
+print(t.document_count)
+print(t.word_index)
+print(t.word_docs)
