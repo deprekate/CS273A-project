@@ -10,8 +10,12 @@ import nltk
 from nltk.corpus import stopwords
 nltk.data.path.append(os.path.join(os.path.dirname(__file__), "data"))
 
+
+from keras.preprocessing.text import Tokenizer
+
+
 if len(sys.argv) < 2:
-	print("usage: frequency.py INFILE")
+	print("usage: tokenize.py INFILE")
 	exit()
 
 def tokenize(text):
@@ -23,6 +27,7 @@ def tokenize(text):
 	        clean_tokens.remove(token)
 	return clean_tokens
 
+#keras.preprocessing.text.Tokenizer(num_words=None, filters='!"#$%&()*+,-./:;<=>?@[\\]^_`{|}~\t\n', lower=True, split=' ', char_level=False, oov_token=None, document_count=0)
 
 all_tokens = dict()
 with zipfile.ZipFile(sys.argv[1]) as z:
