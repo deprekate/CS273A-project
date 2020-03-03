@@ -16,7 +16,7 @@ if len(sys.argv) < 2:
 
 def tokenize(text):
 	sr = stopwords.words('english')
-	tokens = [t for t in text.split()]
+	tokens = [t for t in text.lower().split()]
 	clean_tokens = tokens[:]
 	for token in tokens:
 	    if token in stopwords.words('english'):
@@ -24,17 +24,20 @@ def tokenize(text):
 	return clean_tokens
 
 
+all_tokens = dict()
 with zipfile.ZipFile(sys.argv[1]) as z:
 	name_in = z.namelist()[0]
 	with z.open(name_in) as file_in:
 		reader = csv.reader(codecs.iterdecode(file_in, 'utf-8'))
 		next(reader)
 		for line in reader:
-			print(tokenize(line[1]))
+			clean_tokens = tokenize(line[1])
+			freq = nltk.FreqDist(clean_tokens)
+			for key,val in freq.items():
+				print(str(key) + ':' + str(val))
 			exit()
+			#for token in clean_tokens:
+			#	all_tokens[token] = all_tokens.get(token,0) + 1
 
+#print(all_tokens)
 
-
-#freq = nltk.FreqDist(clean_tokens)
-#for key,val in freq.items():
-#    print(str(key) + ':' + str(val))freq.plot(20, cumulative=False)
