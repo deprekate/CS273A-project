@@ -37,15 +37,16 @@ with zipfile.ZipFile(sys.argv[1]) as z:
 	with z.open(name_in) as file_in:
 		reader = csv.reader(codecs.iterdecode(file_in, 'utf-8'))
 		next(reader)
-		for line in reader:
+		for i, line in enumerate(reader):
 			words = text_to_word_sequence(line[1])
 			t.fit_on_texts(words)
+			print(t.word_counts)
 			#clean_tokens = tokenize(line[1])
 			#freq = nltk.FreqDist(clean_tokens)
 			#for key,val in freq.items():
 			#	all_tokens[key] = 1 #all_tokens.get(key,0) + 1
+		print(i)
 
-	
 # summarize what was learned
 print(t.word_counts)
 print(t.document_count)
