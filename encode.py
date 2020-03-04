@@ -31,7 +31,8 @@ def tokenize_cleaner(text):
 t = Tokenizer()
 # fit the tokenizer on the documents
 
-all_tokens = dict()
+all_words = dict()
+
 with zipfile.ZipFile(sys.argv[1]) as z:
 	name_in = z.namelist()[0]
 	with z.open(name_in) as file_in:
@@ -39,15 +40,17 @@ with zipfile.ZipFile(sys.argv[1]) as z:
 		next(reader)
 		for i, line in enumerate(reader):
 			words = text_to_word_sequence(line[1])
-			t.fit_on_texts(words)
-			print(t.word_counts)
+			#t.fit_on_texts(words)
+			#print(t.word_counts)
 			#clean_tokens = tokenize(line[1])
 			#freq = nltk.FreqDist(clean_tokens)
-			#for key,val in freq.items():
-			#	all_tokens[key] = 1 #all_tokens.get(key,0) + 1
-		print(i)
-
+			for word in words:
+				all_words[word] = all_words.get(word,0) + 1
+			#if not i % 100:
+			#	print(i)
 # summarize what was learned
+for k, v in sorted(all_words.items(), key=lambda item: item[1]):
+	print(k, v)
 print(t.word_counts)
 print(t.document_count)
 print(t.word_index)
