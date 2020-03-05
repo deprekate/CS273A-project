@@ -60,28 +60,51 @@ with zipfile.ZipFile(sys.argv[1]) as z:
 		reader = csv.reader(codecs.iterdecode(file_in, 'utf-8'))
 		next(reader)
 		for i, line in enumerate(reader):
-			#line[1] = bytes(line[1], 'utf-8').decode('utf-8', 'ignore')
 			line[1] = remove_non_ascii(line[1])
 			all_strings += line[1]
-			#t = Tokenizer(num_words=100000)
 			words = text_to_word_sequence(line[1], filters='\'!"#$%&()*+,-./:;<=>?@[\\]^_`{|}~\t\n')
-			#t.fit_on_texts(words)
-			#print(t.word_index)
-			#clean_tokens = tokenize(line[1])
-			#freq = nltk.FreqDist(clean_tokens)
 			for word in words:
 				if (len(word) > 1) and (not word.isdigit()):
 					word = destem(word)
 					all_words[word] = all_words.get(word,0) + 1
-			if not i % 100:
-				print(i)
+
+good_words = []
+for word, count in all_words.items():
+	if count > 1:
+		good_words.append(word)
 
 
-#words = text_to_word_sequence(all_strings)
-#t.fit_on_texts(words)
+with zipfile.ZipFile(sys.argv[1]) as z:
+	name_in = z.namelist()[0]
+	with z.open(name_in) as file_in:
+		reader = csv.reader(codecs.iterdecode(file_in, 'utf-8'))
+		next(reader)
+		for i, line in enumerate(reader):
+			my_words = dict()
+			line[1] = remove_non_ascii(line[1])
+			all_strings += line[1]
+			words = text_to_word_sequence(line[1], filters='\'!"#$%&()*+,-./:;<=>?@[\\]^_`{|}~\t\n')
+			for word in words:
+				if (len(word) > 1) and (not word.isdigit()):
+					word = destem(word)
+					my_words[word] = my_words.get(word,0) + 1
+			for word in good_words:
+				print(my_words.get(word,0), end='')
+			print()
+		
 
-#store mapping dict in a pickle
-pickle.dump(t.word_index, open( "encodings.p", "wb" ) )
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 # summarize what was learned
