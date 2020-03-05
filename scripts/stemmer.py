@@ -2,6 +2,9 @@ import nltk
 
 # I added something
 stemmer = nltk.PorterStemmer()
-stemmer.stem('running') # => run
-stemmer.stem('shoes') # => shoe
-stemmer.stem('expensive') # => expens
+print(stemmer.stem('ran')) # => 
+print(stemmer.stem('running')) # => run
+print(stemmer.stem('shoes')) # => shoe
+print(stemmer.stem('expensive')) # => expens
+
+print(stemmer.stem('y')) # => 

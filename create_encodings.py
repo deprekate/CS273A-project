@@ -8,6 +8,7 @@ import codecs
 import pickle
 
 import nltk
+stemmer = nltk.PorterStemmer()
 from nltk.corpus import stopwords
 nltk.data.path.append(os.path.join(os.path.dirname(__file__), "data"))
 
@@ -35,6 +36,18 @@ def remove_non_ascii(text):
 	# this is the only thing that worked
 	return ''.join(i for i in text if ord(i)<128)
 
+def swap_words(text):
+	text = text.replace(" u ", " you ")
+	return text
+
+def destem(word):
+	# the stemmer code breaks on really long words
+	if len(word) < 50:
+		return stemmer.stem(word)
+	else:
+		return word
+
+
 # fit the tokenizer on the documents
 t = Tokenizer()
 
@@ -51,19 +64,21 @@ with zipfile.ZipFile(sys.argv[1]) as z:
 			line[1] = remove_non_ascii(line[1])
 			all_strings += line[1]
 			#t = Tokenizer(num_words=100000)
-			#words = text_to_word_sequence(line[1])
+			words = text_to_word_sequence(line[1], filters='\'!"#$%&()*+,-./:;<=>?@[\\]^_`{|}~\t\n')
 			#t.fit_on_texts(words)
 			#print(t.word_index)
 			#clean_tokens = tokenize(line[1])
 			#freq = nltk.FreqDist(clean_tokens)
-			#for word in words:
-			#	all_words[word] = all_words.get(word,0) + 1
+			for word in words:
+				if (len(word) > 1) and (not word.isdigit()):
+					word = destem(word)
+					all_words[word] = all_words.get(word,0) + 1
 			if not i % 100:
 				print(i)
 
 
-words = text_to_word_sequence(all_strings)
-t.fit_on_texts(words)
+#words = text_to_word_sequence(all_strings)
+#t.fit_on_texts(words)
 
 #store mapping dict in a pickle
 pickle.dump(t.word_index, open( "encodings.p", "wb" ) )
@@ -72,6 +87,7 @@ pickle.dump(t.word_index, open( "encodings.p", "wb" ) )
 # summarize what was learned
 #for k, v in sorted(all_words.items(), key=lambda item: item[1]):
 #	print(k, v)
+
 #print(t.word_counts)
 #print(t.document_count)
 #print(t.word_index)
