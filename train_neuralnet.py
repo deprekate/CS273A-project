@@ -7,20 +7,20 @@ import numpy as np
 import pandas as pd
 import zipfile
 
-from keras.preprocessing.text import Tokenizer
-from keras.preprocessing.sequence import pad_sequences
 
 
 #import tensorflow as tf
 from tensorflow import keras
 from tensorflow.keras.optimizers import SGD
+from tensorflow.keras.preprocessing.text import Tokenizer
+from tensorflow.keras.preprocessing.sequence import pad_sequences
 
 
 if len(sys.argv) != 2:
 	print("This program reads in a zipped csv file of comment data, and")
 	print("then runs a TensorFlow neural network to classify the data")
 	print()
-	print("usage: create_encodings.py INFILE")
+	print("usage: train_neuralnet.py INFILE.CSV.ZIP")
 	print()
 	exit()
 
@@ -33,7 +33,7 @@ def create_model(input_dim):
     model = keras.Sequential([
         keras.layers.Dense(5000, activation='relu', input_shape=(input_dim,)),
         keras.layers.Dropout(0.1),
-        keras.layers.Dense(500, activation='relu',),
+        keras.layers.Dense(1000, activation='relu',),
         keras.layers.Dropout(0.1),
         keras.layers.Dense(6, activation='sigmoid')
     ])

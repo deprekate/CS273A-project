@@ -72,8 +72,8 @@ with zipfile.ZipFile(sys.argv[1]) as z:
 
 # here is where we can pick out only words we care about
 good_words = []
-for word, count in all_words.items():
-	if count > 1:
+for word, count in sorted(all_words.items(), key=lambda item: item[1], reverse=True):
+	if count > 10:
 		good_words.append(word)
 
 
@@ -82,13 +82,12 @@ with zipfile.ZipFile(sys.argv[1]) as z:
 	with z.open(name_in) as file_in:
 		reader = csv.reader(codecs.iterdecode(file_in, 'utf-8'))
 		next(reader)
-		if sys.argv[2]:
-			for _ in range(int(sys.argv[2])):
-				next(reader)
+		#if sys.argv[2]:
+		#	for _ in range(int(sys.argv[2])):
+		#		next(reader)
 		for i, line in enumerate(reader):
 			my_words = dict()
 			line[1] = remove_non_ascii(line[1])
-			print(line[1])
 			all_strings += line[1]
 			words = text_to_word_sequence(line[1], filters='\'!"#$%&()*+,-./:;<=>?@[\\]^_`{|}~\t\n')
 			for word in words:
@@ -96,22 +95,11 @@ with zipfile.ZipFile(sys.argv[1]) as z:
 					word = destem(word)
 					my_words[word] = my_words.get(word,0) + 1
 			for word in good_words:
-				print(my_words.get(word,0), end='')
+				print(my_words.get(word,0), ',', sep='', end='')
 			print()
-			if sys.argv[2] and i >= 1000:
-				break
+			#if sys.argv[2] and i >= 1000:
+			#	break
 		
-
-
-
-
-
-
-
-
-
-
-
 
 
 
