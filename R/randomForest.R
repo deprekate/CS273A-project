@@ -5,8 +5,8 @@ library(randomForest)
 # module load R/3.6.2
 
 
-Xz = gzfile('matrix.csv.gz','rt')  
-Y = read.csv(Xz,header=F) 
+Xz = gzfile('mat.csv.gz','rt')  
+X = read.csv(Xz,header=F) 
 
 Yz = gzfile('classes.csv.gz','rt')  
 Y = read.csv(Yz,header=F) 
@@ -20,12 +20,14 @@ dat.rf <- randomForest(
 			prox=FALSE,
 )
 dat.rf
-varImpPlot(dat.rf)
+print(importance(dat.rf)
 
-ImpMeasure<-data.frame(importance(dat.rf))
-ImpMeasure$Vars<-row.names(ImpMeasure)
+#varImpPlot(dat.rf)
+
+#ImpMeasure<-data.frame(importance(dat.rf))
+#ImpMeasure$Vars<-row.names(ImpMeasure)
 #important_genus <- ImpMeasure[ImpMeasure$MeanDecreaseGini > 0,2]
 
-Yhat <- predict(dat.rf, X)
+#Yhat <- predict(dat.rf, X)
 
-confusionMatrix(Yhat, Y)
+#confusionMatrix(Yhat, Y)
