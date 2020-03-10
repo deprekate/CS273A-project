@@ -5,11 +5,11 @@ library(randomForest)
 # module load R/3.6.2
 
 
-Xz = gzfile('mat.csv.gz','rt')  
-X = read.csv(Xz,header=F) 
+Xz = gzfile('matrix/mat.csv.gz','rt')  
+X = read.csv(Xz,header=F, colClasses='integer') 
 
-Yz = gzfile('classes.csv.gz','rt')  
-Y = read.csv(Yz,header=F) 
+Yz = gzfile('matrix/classes.csv.gz','rt')  
+Y = read.csv(Yz,header=F, colClasses='factor') 
 
 # random Forest
 print('loaded data')

@@ -7,6 +7,14 @@ import numpy as np
 import pandas as pd
 import zipfile
 
+import pickle
+
+# language processing stuff
+import nltk
+from nltk.corpus import stopwords
+nltk.data.path.append(os.path.join(os.path.dirname(__file__), "data"))
+stemmer = nltk.PorterStemmer()
+stop_words = stopwords.words('english')
 
 
 #import tensorflow as tf
@@ -30,10 +38,46 @@ def remove_non_ascii(text):
 	# this is the only thing that worked
 	return ''.join(i for i in text if ord(i)<128)
 
+def destem(word):
+        # the stemmer code breaks on really long words
+        if len(word) < 50:
+                return stemmer.stem(word)
+        else:
+                return word
+
 def clean(text):
+	# CHARACTER LEVEL CLEANING
+	# get rid of weird characters
 	text = remove_non_ascii(text)
+	# get rid of punctation: using list from tensorflow plus single quote
+	punctuation = '1234567890\'!"#$%&()*+,-./:;<=>?@[\\]^_`{|}~'
+	text = ''.join(c for c in text if c not in punctuation)
+	# get rid of digits
+	#text = ''.join(c for c in text if not c.isdigit())
+	# get rid of extra spacing, newlines, etc
+	text = " ".join(text.split())
+
+	# WORD LEVEL CLEANING
+	# remove stop-words
+	text = ' '.join(w for w in text.split() if w not in stop_words)
+	# drop words that are only one character
+	text = ' '.join(w for w in text.split() if len(w) > 2)
+	# de-stem the words
+	text = ' '.join(destem(w) for w in text.split())
+
+	# FINALIZING THE COMMENT
+	# get rid of extra spacing from word deletions
+	#text = " ".join(text.split())
+
 	return text
 
+def clean_list(a):
+	b = []
+	for i, text in enumerate(a):
+		b.append(clean(text))
+		if not i % 1000:
+			print(i)
+	return b
 
 def create_model(input_dim):
     '''
@@ -66,10 +110,17 @@ with zipfile.ZipFile(sys.argv[1]) as z:
 		tr = pd.read_csv(file_in)
 		Xtr = tr['comment_text']
 		Ytr = tr.loc[:,'toxic':'identity_hate'].values
+		
+		# comment or uncomment these as needed for speed
+		pickle.dump(clean_list(Xtr), open( "cleaned_comments.p", "wb" ) )
+		#Xtr = pickle.load( open( "cleaned_comments.p", "rb" ) )
+		exit()
 		# tokenize data
 		t = Tokenizer(num_words, lower=True)
 		t.fit_on_texts(list(Xtr))
 		Xtr = t.texts_to_matrix(Xtr, mode='count')
+
+		# dont do these
 		#Xtr = t.texts_to_sequences(Xtr)
 		#Xtr = pad_sequences(Xtr, num_words)
 
