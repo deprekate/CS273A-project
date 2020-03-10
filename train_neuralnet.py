@@ -76,7 +76,8 @@ def clean_list(a):
 	for i, text in enumerate(a):
 		b.append(clean(text))
 		if not i % 1000:
-			print(i)
+			sys.stderr.write(str(i) + "\n")
+
 	return b
 
 def create_model(input_dim):
@@ -101,6 +102,7 @@ def create_model(input_dim):
 # ----------------------------TRAINING----------------------
 
 num_words = 10000
+t = Tokenizer(num_words, lower=True)
 
 # open the training zip file
 with zipfile.ZipFile(sys.argv[1]) as z:
@@ -115,15 +117,34 @@ with zipfile.ZipFile(sys.argv[1]) as z:
 		#pickle.dump(clean_list(Xtr), open( "cleaned_comments.p", "wb" ) )
 		Xtr = pickle.load( open( "cleaned_comments.p", "rb" ) )
 		# tokenize data
-		t = Tokenizer(num_words, lower=True)
 		t.fit_on_texts(list(Xtr))
 		Xtr = t.texts_to_matrix(Xtr, mode='count')
 
 		# dont do these
 		#Xtr = t.texts_to_sequences(Xtr)
 		#Xtr = pad_sequences(Xtr, num_words)
+		t.texts_to_sequences('asd')
 
+# THIS IS TO DUMP WORD INFO
+#print(t.word_counts)
+#print(t.document_count)
+#print(t.word_index)
+#print(t.word_docs)
 
+if 1:
+	i = 1
+	for word, count in sorted(t.word_counts.items(), key=lambda item: item[1], reverse=True):
+		if i <= num_words:
+			print(word, ',', sep='', end='')
+		i += 1
+	print()
+	for row in Xtr:
+		for col in row:
+			print(col, ",", sep='', end='')
+		print()
+	
+
+exit()
 
 model = create_model(Xtr.shape[1])
 model.fit(Xtr, Ytr, epochs=3, batch_size=2000) #, callbacks=[cp_callback])
