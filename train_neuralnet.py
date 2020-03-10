@@ -24,6 +24,16 @@ if len(sys.argv) != 2:
 	print()
 	exit()
 
+def remove_non_ascii(text):
+	# damn strippping stupid unicode chars took forever
+	# I tried all sorts of decode.encode etc
+	# this is the only thing that worked
+	return ''.join(i for i in text if ord(i)<128)
+
+def clean(text):
+	text = remove_non_ascii(text)
+	return text
+
 
 def create_model(input_dim):
     '''
