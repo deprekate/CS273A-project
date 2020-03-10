@@ -112,9 +112,8 @@ with zipfile.ZipFile(sys.argv[1]) as z:
 		Ytr = tr.loc[:,'toxic':'identity_hate'].values
 		
 		# comment or uncomment these as needed for speed
-		pickle.dump(clean_list(Xtr), open( "cleaned_comments.p", "wb" ) )
-		#Xtr = pickle.load( open( "cleaned_comments.p", "rb" ) )
-		exit()
+		#pickle.dump(clean_list(Xtr), open( "cleaned_comments.p", "wb" ) )
+		Xtr = pickle.load( open( "cleaned_comments.p", "rb" ) )
 		# tokenize data
 		t = Tokenizer(num_words, lower=True)
 		t.fit_on_texts(list(Xtr))
