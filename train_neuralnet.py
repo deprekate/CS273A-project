@@ -43,6 +43,9 @@ def create_model(input_dim):
     )
     return model
 
+
+# ----------------------------TRAINING----------------------
+
 num_words = 10000
 
 # open the training zip file
@@ -60,12 +63,7 @@ with zipfile.ZipFile(sys.argv[1]) as z:
 		#Xtr = t.texts_to_sequences(Xtr)
 		#Xtr = pad_sequences(Xtr, num_words)
 
-#te = pd.read_csv('test.csv')
-#Xte = tr['comment_text']
-#Xte = t.texts_to_sequences(Xte)
-#Xte = pad_sequences(Xte, num_words)
 
-#
 
 model = create_model(Xtr.shape[1])
 model.fit(Xtr, Ytr, epochs=3, batch_size=2000) #, callbacks=[cp_callback])
@@ -74,5 +72,11 @@ model.fit(Xtr, Ytr, epochs=3, batch_size=2000) #, callbacks=[cp_callback])
 
 Yhat = model.predict(Xtr)
 for row in Yhat:
-	print(row)
+	print(np.round(row, 5))
 
+
+# ----------------------------TESTING-----------------------
+#te = pd.read_csv('test.csv')
+#Xte = tr['comment_text']
+#Xte = t.texts_to_sequences(Xte)
+#Xte = pad_sequences(Xte, num_words)

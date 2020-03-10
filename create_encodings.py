@@ -6,6 +6,7 @@ import zipfile
 import csv
 import codecs
 import pickle
+from random import random
 
 import nltk
 stemmer = nltk.PorterStemmer()
@@ -82,10 +83,19 @@ with zipfile.ZipFile(sys.argv[1]) as z:
 	with z.open(name_in) as file_in:
 		reader = csv.reader(codecs.iterdecode(file_in, 'utf-8'))
 		next(reader)
+
+		# this was for parallelization
 		#if sys.argv[2]:
 		#	for _ in range(int(sys.argv[2])):
 		#		next(reader)
 		for i, line in enumerate(reader):
+			# skip 90% of non-toxic comments and 70% of toxic
+			if 1 in line[2:]:
+				if random() > 0.3:
+					continue
+			elif random() > 0.05:
+				continue
+
 			my_words = dict()
 			line[1] = remove_non_ascii(line[1])
 			all_strings += line[1]
@@ -97,6 +107,20 @@ with zipfile.ZipFile(sys.argv[1]) as z:
 			for word in good_words:
 				print(my_words.get(word,0), ',', sep='', end='')
 			print()
+			sys.stderr.write(line[2])
+			sys.stderr.write(',')
+			sys.stderr.write(line[3])
+			sys.stderr.write(',')
+			sys.stderr.write(line[4])
+			sys.stderr.write(',')
+			sys.stderr.write(line[5])
+			sys.stderr.write(',')
+			sys.stderr.write(line[6])
+			sys.stderr.write(',')
+			sys.stderr.write(line[6])
+			sys.stderr.write("\n")
+
+			# this was for parallelization
 			#if sys.argv[2] and i >= 1000:
 			#	break
 		
