@@ -98,11 +98,40 @@ def create_model(input_dim):
     )
     return model
 
+class my_tokenizer(dict):
+	def __init__(self, num_words=None):
+		self.num_words = num_words
+		#self.word_counts = dict()
+		self.top_words = None
+	def add_texts(self, a):
+		for row in a:
+			for word in row.split():
+				#self.word_counts[word] = self.word_counts.get(word, 0) + 1
+				self[word] = self.get(word, 0) + 1
+	def texts_to_matrix(self, a):
+		self.top_words = sorted(self, key=self.get, reverse=True)[ : self.num_words ]
+		mat = np.zeros((len(a), self.num_words))
+		#for word, count in sorted(t.word_counts.items(), key=lambda item: item[1], reverse=True):
+		for i, row in enumerate(a):
+			word_counts = dict()
+			for word in row.split():
+				word_counts[word] = word_counts.get(word, 0) + 1
+			for j, word in enumerate(self.top_words):
+				mat[i,j] = word_counts.get(word, 0)
+		return mat	
+
+	def words_used(self):
+		return self.top_words
+		
+
+
 
 # ----------------------------TRAINING----------------------
 
 num_words = 10000
-t = Tokenizer(num_words, lower=True)
+t = Tokenizer(num_words, lower=True, oov_token=None)
+tt = my_tokenizer(num_words=num_words)
+
 
 # open the training zip file
 with zipfile.ZipFile(sys.argv[1]) as z:
@@ -110,20 +139,25 @@ with zipfile.ZipFile(sys.argv[1]) as z:
 	with z.open(name_in) as file_in:
 		# read in data
 		tr = pd.read_csv(file_in)
-		Xtr = tr['comment_text']
+		#Xtr = tr['comment_text']
 		Ytr = tr.loc[:,'toxic':'identity_hate'].values
 		
 		# comment or uncomment these as needed for speed
 		#pickle.dump(clean_list(Xtr), open( "cleaned_comments.p", "wb" ) )
 		Xtr = pickle.load( open( "cleaned_comments.p", "rb" ) )
+
 		# tokenize data
-		t.fit_on_texts(list(Xtr))
-		Xtr = t.texts_to_matrix(Xtr, mode='count')
+		#t.fit_on_texts(list(Xtr))
+		#Xtr = t.texts_to_matrix(Xtr, mode='count')
+
+		# these are my custom code to tokenize
+		tt.add_texts(Xtr)
+		Xtr = tt.texts_to_matrix(Xtr)
 
 		# dont do these
 		#Xtr = t.texts_to_sequences(Xtr)
 		#Xtr = pad_sequences(Xtr, num_words)
-		t.texts_to_sequences('asd')
+
 
 # THIS IS TO DUMP WORD INFO
 #print(t.word_counts)
@@ -131,19 +165,16 @@ with zipfile.ZipFile(sys.argv[1]) as z:
 #print(t.word_index)
 #print(t.word_docs)
 
+# this is to dump the matrix
 if 1:
-	i = 1
-	for word, count in sorted(t.word_counts.items(), key=lambda item: item[1], reverse=True):
-		if i <= num_words:
+	for word in tt.words_used():
 			print(word, ',', sep='', end='')
-		i += 1
 	print()
 	for row in Xtr:
 		for col in row:
-			print(col, ",", sep='', end='')
+			print(int(col), ",", sep='', end='')
 		print()
 	
-
 exit()
 
 model = create_model(Xtr.shape[1])
