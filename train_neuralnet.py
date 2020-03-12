@@ -7,6 +7,7 @@ import pandas as pd
 import zipfile
 
 from sklearn.metrics import confusion_matrix
+from sklearn.model_selection import train_test_split
 
 import pickle
 
@@ -78,8 +79,8 @@ def clean_list(a):
 	b = []
 	for i, text in enumerate(a):
 		b.append(clean(text))
-		if not i % 1000:
-			sys.stderr.write(str(i) + "\n")
+		#if not i % 1000:
+		#	sys.stderr.write(str(i) + "\n")
 
 	return b
 
@@ -168,9 +169,12 @@ with zipfile.ZipFile(sys.argv[1]) as z:
 	with z.open(name_in) as file_in:
 		# read in data
 		tr = pd.read_csv(file_in)
-		Xtr = tr['comment_text']
+		train, valid = train_test_split(tr, test_size=0.2)
+	
+		Xtr = train['comment_text']
+		#Xtr = clean_list(Xtr)
 		# this fixes some weird float32 v int64 bug
-		Ytr = tr.loc[:,'toxic':'identity_hate'].values.astype(np.float32)
+		Ytr = train.loc[:,'toxic':'identity_hate'].values.astype(np.float32)
 		
 		# comment or uncomment these as needed for speed
 		#pickle.dump(clean_list(Xtr), open( "cleaned_comments.p", "wb" ) )
@@ -208,7 +212,7 @@ if 0:
 '''
 
 
-model = create_model( Xtr.shape[1], weighted_binary_crossentropy(10) ) 
+model = create_model( Xtr.shape[1], weighted_binary_crossentropy(float(sys.argv[3])) ) 
 model.fit(Xtr, Ytr, epochs=5, batch_size=500) #, callbacks=[cp_callback])
 #test_loss, test_acc = model.evaluate(Xtr,  Ytr, verbose=2)
 #print('\nTest accuracy of', 'Adam', 'Model:', test_acc)\
@@ -216,14 +220,25 @@ model.fit(Xtr, Ytr, epochs=5, batch_size=500) #, callbacks=[cp_callback])
 Yhat = model.predict(Xtr)
 Yhat = np.round(Yhat)
 tn, fp, fn, tp = confusion_matrix(Ytr.flatten(), Yhat.flatten()).ravel()
-print(tn, fp, fn, tp, (tp+tn)/(tp+fp+fn+tn))
+print(tn, fp, fn, tp, sep='\t', end='') #, (tp+tn)/(tp+fp+fn+tn))
 
 #for x, y, yh in zip(Xtr, Ytr, Yhat):
 #	print(y, np.round(yh), sep='\t')
 
+# ----------------------------VALIDATION--------------------
+Xva = valid['comment_text']
+Yva = valid.loc[:,'toxic':'identity_hate'].values.astype(np.float32)
+Xva = t.texts_to_matrix(Xva, mode='count')
+Yvahat = model.predict(Xva)
+Yvahat = np.round(Yvahat)
+
+tn, fp, fn, tp = confusion_matrix(Yva.flatten(), Yvahat.flatten()).ravel()
+print("\t", end='')
+print(tn, fp, fn, tp, sep='\t', end='') #, (tp+tn)/(tp+fp+fn+tn))
+
 # ----------------------------TESTING-----------------------
 
-t2 = Tokenizer(num_words, lower=True, oov_token=None)
+#t2 = Tokenizer(num_words, lower=True, oov_token=None)
 # open the testing zip file
 with zipfile.ZipFile(sys.argv[2]) as z:
 	name_in = z.namelist()[0]
@@ -234,6 +249,7 @@ with zipfile.ZipFile(sys.argv[2]) as z:
 		te = te[te.toxic != -1]
 
 		Xte = te['comment_text']
+		#Xte = clean_list(Xte)
 		# this fixes some weird float32 v int64 bug
 		Yte = te.loc[:,'toxic':'identity_hate'].values.astype(np.float32)
 
@@ -244,15 +260,15 @@ with zipfile.ZipFile(sys.argv[2]) as z:
 		#Xtr = pickle.load( open( "cleaned_comments.p", "rb" ) )
 
 		# tokenize data
-		t2.fit_on_texts(list(Xte))
-		Xte = t2.texts_to_matrix(Xte, mode='count')
+		#t2.fit_on_texts(list(Xte))
+		Xte = t.texts_to_matrix(Xte, mode='count')
 
 
 Ytehat = model.predict(Xte)
 Ytehat = np.round(Ytehat)
-print(Yte.shape)
-print(Ytehat.shape)
 
 tn, fp, fn, tp = confusion_matrix(Yte.flatten(), Ytehat.flatten()).ravel()
-print(tn, fp, fn, tp, (tp+tn)/(tp+fp+fn+tn))
+print("\t", end='')
+print(tn, fp, fn, tp, sep='\t', end='') #, (tp+tn)/(tp+fp+fn+tn))
+print()
 
