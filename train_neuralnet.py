@@ -6,6 +6,8 @@ import numpy as np
 import pandas as pd
 import zipfile
 
+from sklearn.metrics import confusion_matrix
+
 import pickle
 
 # language processing stuff
@@ -16,6 +18,7 @@ stemmer = nltk.PorterStemmer()
 stop_words = stopwords.words('english')
 
 import tensorflow as tf
+tf.get_logger().setLevel('INFO')
 from tensorflow import keras
 from tensorflow.keras.optimizers import SGD
 from tensorflow.keras.preprocessing.text import Tokenizer
@@ -90,7 +93,7 @@ def get_weighted_loss(my_input):
 	return weighted_bce
 
 
-def weighted_binary_crossentropy(weight):
+def weighted_binary_crossentropy(weight=1):
 	"""
 	Positive weighted loss function
 	"""
@@ -205,12 +208,18 @@ if 0:
 '''
 
 
-model = create_model( Xtr.shape[1], weighted_binary_crossentropy(10) )
-model.fit(Xtr, Ytr, epochs=3) #, batch_size=2000) #, callbacks=[cp_callback])
+model = create_model( Xtr.shape[1], weighted_binary_crossentropy(10) ) 
+model.fit(Xtr, Ytr, epochs=5, batch_size=500) #, callbacks=[cp_callback])
 #test_loss, test_acc = model.evaluate(Xtr,  Ytr, verbose=2)
 #print('\nTest accuracy of', 'Adam', 'Model:', test_acc)\
 
 Yhat = model.predict(Xtr)
+Yhat = np.round(Yhat)
+tn, fp, fn, tp = confusion_matrix(Ytr.flatten(), Yhat.flatten()).ravel()
+print(tn, fp, fn, tp)
+exit()
+
+
 for x, y, yh in zip(Xtr, Ytr, Yhat):
 	print(y, np.round(yh), sep='\t')
 
