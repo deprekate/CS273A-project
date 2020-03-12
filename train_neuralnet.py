@@ -27,7 +27,7 @@ from tensorflow.keras import backend as K
 
 
 
-if len(sys.argv) != 2:
+if len(sys.argv) < 2:
 	print("This program reads in a zipped csv file of comment data, and")
 	print("then runs a TensorFlow neural network to classify the data")
 	print()
@@ -216,16 +216,43 @@ model.fit(Xtr, Ytr, epochs=5, batch_size=500) #, callbacks=[cp_callback])
 Yhat = model.predict(Xtr)
 Yhat = np.round(Yhat)
 tn, fp, fn, tp = confusion_matrix(Ytr.flatten(), Yhat.flatten()).ravel()
-print(tn, fp, fn, tp)
-exit()
+print(tn, fp, fn, tp, (tp+tn)/(tp+fp+fn+tn))
 
-
-for x, y, yh in zip(Xtr, Ytr, Yhat):
-	print(y, np.round(yh), sep='\t')
-
+#for x, y, yh in zip(Xtr, Ytr, Yhat):
+#	print(y, np.round(yh), sep='\t')
 
 # ----------------------------TESTING-----------------------
-#te = pd.read_csv('test.csv')
-#Xte = tr['comment_text']
-#Xte = t.texts_to_sequences(Xte)
-#Xte = pad_sequences(Xte, num_words)
+
+t2 = Tokenizer(num_words, lower=True, oov_token=None)
+# open the testing zip file
+with zipfile.ZipFile(sys.argv[2]) as z:
+	name_in = z.namelist()[0]
+	with z.open(name_in) as file_in:
+		# read in data
+		te = pd.read_csv(file_in)
+		# the testing has -1 values on some rows which is 'missing' data
+		te = te[te.toxic != -1]
+
+		Xte = te['comment_text']
+		# this fixes some weird float32 v int64 bug
+		Yte = te.loc[:,'toxic':'identity_hate'].values.astype(np.float32)
+
+		
+		
+		# comment or uncomment these as needed for speed
+		#pickle.dump(clean_list(Xtr), open( "cleaned_comments.p", "wb" ) )
+		#Xtr = pickle.load( open( "cleaned_comments.p", "rb" ) )
+
+		# tokenize data
+		t2.fit_on_texts(list(Xte))
+		Xte = t2.texts_to_matrix(Xte, mode='count')
+
+
+Ytehat = model.predict(Xte)
+Ytehat = np.round(Ytehat)
+print(Yte.shape)
+print(Ytehat.shape)
+
+tn, fp, fn, tp = confusion_matrix(Yte.flatten(), Ytehat.flatten()).ravel()
+print(tn, fp, fn, tp, (tp+tn)/(tp+fp+fn+tn))
+
