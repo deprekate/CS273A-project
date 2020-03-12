@@ -87,6 +87,7 @@ def get_weighted_loss(my_input):
 		bce = K.binary_crossentropy(y_true, y_pred)
 		weighted_bce = K.mean(bce * weights)
 		return weighted_bce
+	return weighted_bce
 
 
 def weighted_binary_crossentropy(weight):
