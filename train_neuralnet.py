@@ -1,6 +1,5 @@
 #!/usr/bin/python
 
-
 import os
 import sys
 import numpy as np
@@ -16,23 +15,12 @@ nltk.data.path.append(os.path.join(os.path.dirname(__file__), "data"))
 stemmer = nltk.PorterStemmer()
 stop_words = stopwords.words('english')
 
-
 import tensorflow as tf
 from tensorflow import keras
 from tensorflow.keras.optimizers import SGD
 from tensorflow.keras.preprocessing.text import Tokenizer
 from tensorflow.keras.preprocessing.sequence import pad_sequences
 from tensorflow.keras import backend as K
-
-logits = tf.constant([[0, 1],
-                      [1, 1],
-                      [2, -4]], dtype=tf.float32)
-y_true = tf.constant([[1, 1],
-                      [1, 0],
-                      [1, 0]], dtype=tf.float32)
-# tensorflow api
-#loss = tf.losses.sigmoid_cross_entropy(multi_class_labels=y_true, logits=logits)
-#tf.compat.v1.losses.sigmoid_cross_entropy(multi_class_labels=y_true, logits=logits)
 
 
 
@@ -100,26 +88,38 @@ def get_weighted_loss(my_input):
 		weighted_bce = K.mean(bce * weights)
 		return weighted_bce
 
-def create_model(input_dim, my_loss):
+
+def weighted_binary_crossentropy(weight):
+	"""
+	Positive weighted loss function
+	"""
+	def wbc(y_true, y_pred):
+		# transform back to logits
+		_epsilon = tf.convert_to_tensor(K.epsilon(), y_pred.dtype.base_dtype)
+		y_pred = tf.clip_by_value(y_pred, _epsilon, 1 - _epsilon)
+		y_pred = tf.math.log(y_pred / (1 - y_pred))
+		# compute weighted loss
+		loss = tf.nn.weighted_cross_entropy_with_logits(y_true, logits=y_pred, pos_weight=weight)
+		return tf.reduce_mean(loss, axis=-1)
+	return wbc
+
+def create_model(input_dim, loss_function):
 	'''
 	This creates and returns a new model
 	'''
 	sgd = SGD(lr=0.01, decay=1e-6, momentum=0.9, nesterov=True)
 
 	model = keras.Sequential([
-		keras.layers.Dense(5, activation='relu', input_shape=(input_dim,)),
+		keras.layers.Dense(500, activation='relu', input_shape=(input_dim,)),
 		keras.layers.Dropout(0.1),
-		keras.layers.Dense(10, activation='relu',),
+		keras.layers.Dense(100, activation='relu',),
 		keras.layers.Dropout(0.1),
 		keras.layers.Dense(6, activation='sigmoid')
 	])
 	model.compile(
 		optimizer = sgd,
-		#optimizer = 'Adam',
 		metrics=['accuracy'],
-		#loss='binary_crossentropy'
-		#loss=tf.compat.v1.losses.sigmoid_cross_entropy
-		loss=my_loss
+		loss = loss_function
 	)
 	return model
 
@@ -153,7 +153,7 @@ class my_tokenizer(dict):
 
 # ----------------------------TRAINING----------------------
 
-num_words = 10
+num_words = 1000
 t = Tokenizer(num_words, lower=True, oov_token=None)
 tt = my_tokenizer(num_words=num_words)
 
@@ -165,7 +165,8 @@ with zipfile.ZipFile(sys.argv[1]) as z:
 		# read in data
 		tr = pd.read_csv(file_in)
 		Xtr = tr['comment_text']
-		Ytr = tr.loc[:,'toxic':'identity_hate'].values
+		# this fixes some weird float32 v int64 bug
+		Ytr = tr.loc[:,'toxic':'identity_hate'].values.astype(np.float32)
 		
 		# comment or uncomment these as needed for speed
 		#pickle.dump(clean_list(Xtr), open( "cleaned_comments.p", "wb" ) )
@@ -184,15 +185,13 @@ with zipfile.ZipFile(sys.argv[1]) as z:
 		#Xtr = pad_sequences(Xtr, num_words)
 
 
-print(Xtr.shape)
-print(Ytr.shape)
 # THIS IS TO DUMP WORD INFO
 #print(t.word_counts)
 #print(t.document_count)
 #print(t.word_index)
 #print(t.word_docs)
 
-
+'''
 # this is to dump the matrix
 if 0:
 	for word in tt.words_used():
@@ -202,20 +201,17 @@ if 0:
 		for col in row:
 			print(int(col), ",", sep='', end='')
 		print()
+'''
 
 
-#cost = tf.nn.sigmoid_cross_entropy_with_logits(labels=y_, logits=y_*10)
-#cost = tf.compat.v1.losses.sigmoid_cross_entropy(multi_class_labels=Ytr, logits)
-cost = 'binary_crossentropy'
-
-model = create_model(Xtr.shape[1], cost)
+model = create_model( Xtr.shape[1], weighted_binary_crossentropy(10) )
 model.fit(Xtr, Ytr, epochs=3) #, batch_size=2000) #, callbacks=[cp_callback])
 #test_loss, test_acc = model.evaluate(Xtr,  Ytr, verbose=2)
 #print('\nTest accuracy of', 'Adam', 'Model:', test_acc)\
 
 Yhat = model.predict(Xtr)
 for x, y, yh in zip(Xtr, Ytr, Yhat):
-	print(x, y, np.round(yh, 5), sep='\t')
+	print(y, np.round(yh), sep='\t')
 
 
 # ----------------------------TESTING-----------------------
