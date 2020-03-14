@@ -23,6 +23,13 @@ def class_feature_importance(X, Y, feature_importances):
 X = pd.read_csv('matrix/mat.csv.gz', compression='gzip', header=0)
 Y = pd.read_csv('matrix/classes.csv.gz', compression='gzip', header=0)
 
+Xfreq = X.div(X.sum(axis=1), axis=0)
+
+X = Xfreq
+
+X[np.any(np.isnan(X)) == True] = 0
+X[np.any(np.all(np.isfinite(X))) == True] = 0
+
 
 clf = RandomForestClassifier(n_estimators = 1000, random_state = 0)
 clf.fit(X, Y[sys.argv[1]])

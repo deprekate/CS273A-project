@@ -108,6 +108,8 @@ def weighted_binary_crossentropy(weight=1):
 		return tf.reduce_mean(loss, axis=-1)
 	return wbc
 
+num_words = int(sys.argv[3]) #1000
+
 def create_model(input_dim, loss_function):
 	'''
 	This creates and returns a new model
@@ -115,9 +117,9 @@ def create_model(input_dim, loss_function):
 	sgd = SGD(lr=0.01, decay=1e-6, momentum=0.9, nesterov=True)
 
 	model = keras.Sequential([
-		keras.layers.Dense(500, activation='relu', input_shape=(input_dim,)),
+		keras.layers.Dense(num_words/2, activation='relu', input_shape=(input_dim,)),
 		keras.layers.Dropout(0.1),
-		keras.layers.Dense(100, activation='relu',),
+		keras.layers.Dense(num_words/5, activation='relu',),
 		keras.layers.Dropout(0.1),
 		keras.layers.Dense(6, activation='sigmoid')
 	])
@@ -158,7 +160,7 @@ class my_tokenizer(dict):
 
 # ----------------------------TRAINING----------------------
 
-num_words = 1000
+tok_mode = sys.argv[4] #'count'
 t = Tokenizer(num_words, lower=True, oov_token=None)
 tt = my_tokenizer(num_words=num_words)
 
@@ -182,7 +184,7 @@ with zipfile.ZipFile(sys.argv[1]) as z:
 
 		# tokenize data
 		t.fit_on_texts(list(Xtr))
-		Xtr = t.texts_to_matrix(Xtr, mode='count')
+		Xtr = t.texts_to_matrix(Xtr, mode=tok_mode)
 
 		# these are my custom code to tokenize
 		#tt.add_texts(Xtr)
@@ -212,7 +214,7 @@ if 0:
 '''
 
 
-model = create_model( Xtr.shape[1], weighted_binary_crossentropy(float(sys.argv[3])) ) 
+model = create_model( Xtr.shape[1], weighted_binary_crossentropy(float(sys.argv[5])) ) 
 model.fit(Xtr, Ytr, epochs=5, batch_size=500) #, callbacks=[cp_callback])
 #test_loss, test_acc = model.evaluate(Xtr,  Ytr, verbose=2)
 #print('\nTest accuracy of', 'Adam', 'Model:', test_acc)\
@@ -220,7 +222,10 @@ model.fit(Xtr, Ytr, epochs=5, batch_size=500) #, callbacks=[cp_callback])
 Yhat = model.predict(Xtr)
 Yhat = np.round(Yhat)
 tn, fp, fn, tp = confusion_matrix(Ytr.flatten(), Yhat.flatten()).ravel()
-print(tn, fp, fn, tp, sep='\t', end='') #, (tp+tn)/(tp+fp+fn+tn))
+print(sys.argv[3], sys.argv[4], sys.argv[5], sep='\t', end='')
+print("\t", end='')
+print(tn, fp, fn, tp, sep='\t', end='')
+print("\t", (tp+tn)/(tp+fp+fn+tn), sep='', end='')
 
 #for x, y, yh in zip(Xtr, Ytr, Yhat):
 #	print(y, np.round(yh), sep='\t')
@@ -228,13 +233,14 @@ print(tn, fp, fn, tp, sep='\t', end='') #, (tp+tn)/(tp+fp+fn+tn))
 # ----------------------------VALIDATION--------------------
 Xva = valid['comment_text']
 Yva = valid.loc[:,'toxic':'identity_hate'].values.astype(np.float32)
-Xva = t.texts_to_matrix(Xva, mode='count')
+Xva = t.texts_to_matrix(Xva, mode=tok_mode)
 Yvahat = model.predict(Xva)
 Yvahat = np.round(Yvahat)
 
 tn, fp, fn, tp = confusion_matrix(Yva.flatten(), Yvahat.flatten()).ravel()
 print("\t", end='')
 print(tn, fp, fn, tp, sep='\t', end='') #, (tp+tn)/(tp+fp+fn+tn))
+print("\t", (tp+tn)/(tp+fp+fn+tn), sep='', end='')
 
 # ----------------------------TESTING-----------------------
 
@@ -261,7 +267,7 @@ with zipfile.ZipFile(sys.argv[2]) as z:
 
 		# tokenize data
 		#t2.fit_on_texts(list(Xte))
-		Xte = t.texts_to_matrix(Xte, mode='count')
+		Xte = t.texts_to_matrix(Xte, mode=tok_mode)
 
 
 Ytehat = model.predict(Xte)
@@ -270,5 +276,6 @@ Ytehat = np.round(Ytehat)
 tn, fp, fn, tp = confusion_matrix(Yte.flatten(), Ytehat.flatten()).ravel()
 print("\t", end='')
 print(tn, fp, fn, tp, sep='\t', end='') #, (tp+tn)/(tp+fp+fn+tn))
+print("\t", (tp+tn)/(tp+fp+fn+tn), sep='', end='')
 print()
 
